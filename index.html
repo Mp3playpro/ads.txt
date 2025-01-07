@@ -1,0 +1,176 @@
+<html><head><base href="." />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f7f9fc;
+}
+
+.results {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 20px auto;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: none;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error {
+  color: #dc3545;
+}
+
+.success {
+  color: #198754;
+}
+
+.warning {
+  color: #ffc107;
+}
+
+.error-details {
+  background: #fff3f3;
+  border-left: 4px solid #dc3545;
+  padding: 10px 15px;
+  margin: 10px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="mb-4">Ads.txt Checker By Somi</h1>
+  
+  <div class="form-group mb-3">
+    <label for="urlInput">Enter website URL:</label>
+    <input type="url" class="form-control" id="urlInput" placeholder="https://example.com">
+  </div>
+  
+  <button class="btn btn-primary" onclick="checkAdsTxt()">Check Ads.txt</button>
+  
+  <div class="spinner" id="spinner"></div>
+  
+  <div class="results" id="results">
+    <h3>Results will appear here</h3>
+  </div>
+</div>
+
+<script>
+async function checkAdsTxt() {
+  const urlInput = document.getElementById('urlInput');
+  const spinner = document.getElementById('spinner');
+  const results = document.getElementById('results');
+  
+  // Basic URL validation
+  let url;
+  try {
+    url = new URL(urlInput.value);
+  } catch(e) {
+    results.innerHTML = `
+      <div class="error-details">
+        <p class="error">Please enter a valid URL</p>
+        <p><strong>Error details:</strong> ${e.message}</p>
+      </div>`;
+    return;
+  }
+  
+  // Show loading spinner
+  spinner.style.display = 'block';
+  results.innerHTML = '';
+  
+  try {
+    // Try to fetch ads.txt
+    const adsTxtUrl = `${url.protocol}//${url.hostname}/ads.txt`;
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(adsTxtUrl)}`;
+    
+    const response = await fetch(proxyUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const content = await response.text();
+    
+    // Parse and validate ads.txt content
+    const lines = content.split('\n');
+    let validLines = 0;
+    let invalidLines = 0;
+    let output = '<h3>Ads.txt Analysis</h3>';
+    let errorDetails = [];
+    
+    output += `<p>Found ${lines.length} total lines</p>`;
+    
+    lines.forEach((line, index) => {
+      // Remove comments and trim whitespace
+      const cleanLine = line.split('#')[0].trim();
+      
+      if (cleanLine === '') return;
+      
+      // Basic ads.txt format validation
+      // Should be: domain, publisher id, type, certification authority id (optional)
+      const parts = cleanLine.split(',').map(part => part.trim());
+      
+      if (parts.length >= 3) {
+        validLines++;
+        output += `<p class="success">✓ Line ${index + 1}: ${cleanLine}</p>`;
+      } else {
+        invalidLines++;
+        const error = `Missing required fields. Found ${parts.length} fields, need at least 3 (domain, publisher ID, and type)`;
+        errorDetails.push(`Line ${index + 1}: ${error}`);
+        output += `<p class="error">✗ Line ${index + 1}: ${cleanLine}</p>
+                  <small class="error">Error: ${error}</small>`;
+      }
+    });
+    
+    output += `<hr>`;
+    output += `<p>Valid lines: <span class="success">${validLines}</span></p>`;
+    output += `<p>Invalid lines: <span class="error">${invalidLines}</span></p>`;
+    
+    if (invalidLines > 0) {
+      output += `<div class="error-details">
+                  <h4>Error Details:</h4>
+                  <ul>
+                    ${errorDetails.map(error => `<li>${error}</li>`).join('')}
+                  </ul>
+                </div>`;
+    }
+    
+    results.innerHTML = output;
+    
+  } catch (error) {
+    results.innerHTML = `
+      <div class="error-details">
+        <h4>Error checking ads.txt:</h4>
+        <p><strong>Error type:</strong> ${error.name}</p>
+        <p><strong>Error message:</strong> ${error.message}</p>
+        <p><strong>Possible reasons:</strong></p>
+        <ul>
+          <li>ads.txt file doesn't exist at ${url.hostname}/ads.txt</li>
+          <li>Website is blocking access to the file</li>
+          <li>CORS policy restrictions preventing access</li>
+          <li>Network connectivity issues</li>
+          <li>Server is not responding</li>
+        </ul>
+        <p><strong>Attempted URL:</strong> ${url.protocol}//${url.hostname}/ads.txt</p>
+      </div>
+    `;
+  } finally {
+    spinner.style.display = 'none';
+  }
+}
+</script>
+</body></html>
