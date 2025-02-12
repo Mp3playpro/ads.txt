@@ -1,102 +1,489 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Image Enhancement Tool</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<style>
+		/* Modern CSS Reset and Base Styles */
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
 
-                        <div id="3553554c376758456745697a3b6d50" domain="listeamed.net" width="800" height="600"></div>
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
+.container {
+  width: min(95%, 1000px);
+  margin: 2rem auto;
+  background: var(--card-bg);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
 
-<script>
-(function (a, b) {
-  const a1t = {a: "0x202", b: "0x1f9", c: "0x1ec", d: "0x1eb", e: "0x1f6", f: "0x1f5", g: "0x1ed"}, h = a1b, c = a();
-  while (true) {
-    try {
-      const d = -parseInt(h(a1t.a)) / 1 + -parseInt(h(a1t.b)) / 2 * (-parseInt(h(a1t.c)) / 3) + -parseInt(h("0x1ff")) / 4 * (-parseInt(h(a1t.d)) / 5) + -parseInt(h("0x1ef")) / 6 * (parseInt(h("0x1f7")) / 7) + parseInt(h(a1t.e)) / 8 * (-parseInt(h("0x1fe")) / 9) + -parseInt(h("0x1ee")) / 10 + parseInt(h(a1t.f)) / 11 * (parseInt(h(a1t.g)) / 12);
-      if (d === b) break; else c.push(c.shift());
-    } catch (e) {
-      c.push(c.shift());
-    }
+h1 {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+p {
+  color: var(--text-secondary);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  line-height: 1.6;
+  margin: 1rem 0 2rem;
+}
+
+.input-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+input, select, button {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+input, select {
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.preview-container {
+  position: relative;
+  min-height: 300px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  margin-top: 2rem;
+  background: var(--bg-color);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.preview-container img {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.pending-message {
+  display: none;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+#resultImage {
+  max-width: 100%;
+  height: auto;
+  display: none;
+  border-radius: calc(var(--radius) - 4px);
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.loading-spinner {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--bg-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-radius: var(--radius);
+  display: none;
+  border: 1px solid #fee2e2;
+}
+
+.upload-section {
+  margin-bottom: 2rem;
+}
+
+.upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--bg-color);
+}
+
+.upload-area:hover {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.upload-area.dragover {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  fill: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.upload-area p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.browse-text {
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.browse-text:hover {
+  color: var(--primary-hover);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    margin: 1rem auto;
+    padding: 1.25rem;
   }
-}(a1a, 176625), (() => {
-  "use strict";
-  const a1E = {a: "0x1f4", b: "0x1f4"}, a1D = {a: "0x1fc", b: "0x204", c: "0x1f1", d: "0x1f3", e: "0x1f8"}, a1C = {a: "0x1e9"}, a1B = {a: "0x1e9"}, a1z = {a: "0x1e9"}, a1y = {a: "0x1e9"}, a1v = {a: "0x201"}, j = a1b;
-  class a {
-    constructor() {
-      const i = a1b;
-      this.el = this[i("0x1fa")]();
-    }
-    [j("0x1fa")]() {
-      const k = j;
-      return document[k(a1v.a)]("div[id][domain]");
-    }
-    ["getId"]() {
-      const a1w = {a: "0x1fb"}, n = j;
-      return function (b, c, d) {
-        const l = a1b;
-        let f = "";
-        for (let g = 0; g < b[l(a1w.a)]; g++) f += (4 ^ b.charCodeAt(g))[l("0x1f2")](16);
-        return f;
-      }(function (b, c, d) {
-        const m = a1b;
-        let f = "";
-        for (let g = 0; g < b[m("0x1fb")]; g += 2) f += String[m("0x1f0")](2 ^ parseInt(b.substr(g, 2), 16));
-        return f;
-      }(this.el[n(a1y.a)]("id")));
-    }
-    ["getDomain"]() {
-      const o = j;
-      return this.el[o(a1z.a)]("domain");
-    }
-    [j("0x1f3")]() {
-      const p = j;
-      return this.el[p("0x1e9")]("width") || "100%";
-    }
-    [j("0x200")]() {
-      const q = j;
-      return this.el[q(a1B.a)]("height") || "100%";
-    }
-    [j("0x203")]() {
-      const r = j;
-      return this.el[r(a1C.a)]("class");
-    }
-    [j(a1E.a)]() {
-      const s = j;
-      var b = "//" + this[s("0x1fd")]() + "/e/" + this[s(a1D.a)](), c = document[s(a1D.b)]("iframe");
-      c[s(a1D.c)]("src", b), c[s("0x1f1")]("width", this[s(a1D.d)]()), c[s("0x1f1")]("height", this.getHeight()), c.setAttribute("class", this[s("0x203")]()), c[s("0x1f1")]("frameborder", "0"), c[s("0x1f1")]("marginwidth", "0"), c[s("0x1f1")]("marginheight", "0"), c[s(a1D.c)]("scrolling", "no"), c[s("0x1f1")]("allowfullscreen", "true"), this.el[s("0x1ea")](c), this.el[s(a1D.e)]();
-    }
+  
+  .input-group {
+    grid-template-columns: 1fr;
   }
+  
+  button {
+    width: 100%;
+  }
+}
+</style>
+  <div class="container">
+    <h1>AI Image Enhancement</h1>
+    <p>Transform your images using advanced AI processing. Enhance quality, recolor, or remove haze with just one click.</p>
+    
+    <div class="upload-section">
+      <div class="upload-area" id="dropZone">
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        <svg class="upload-icon" viewBox="0 0 24 24" width="24" height="24">
+          <path d="M12 16L7 11H10V7H14V11H17L12 16Z M21 19V21H3V19H21Z" />
+        </svg>
+        <p>Drag & Drop image or <span class="browse-text">Browse</span></p>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <input 
+        type="text" 
+        id="imageUrl" 
+        placeholder="Paste your image URL here" 
+        aria-label="Image URL"
+      />
+      <select id="modeSelect" aria-label="Enhancement mode">
+        <option value="enhance">Enhance Quality</option>
+        <option value="recolor">Recolor Image</option>
+        <option value="dehaze">Remove Haze</option>
+      </select>
+      <button onclick="handleImageEnhancement()" id="enhanceBtn">
+        <span>Process Image</span>
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="preview-container">
+      <div id="loadingSpinner" class="loading-spinner"></div>
+      <div id="pendingMessage" class="pending-message">Processing your image... Please wait.</div>
+      <img id="resultImage" alt="Enhanced Image Preview" />
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+  </div>
+
+  <script>
+  	const enhanceImage = async (imageUrl, mode) => {
+  const apiUrl = `https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`;
+  
+  showLoading(true);
+  showError('');
+  clearResult(); // Clear previous result
+  
   try {
-    (new a)[j(a1E.b)]();
-  } catch (b) {
-    alert("Unable to load the video, please create a ticket");
-  }
-})());
-function a1b(a, b) {
-  const c = a1a();
-  return a1b = function (d, e) {
-    d = d - 489;
-    let f = c[d];
-    if (a1b.wxFveb === undefined) {
-      var g = function (l) {
-        const m = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=";
-        let n = "", o = "";
-        for (let p = 0, q, r, s = 0; r = l.charAt(s++); ~r && (q = p % 4 ? q * 64 + r : r, p++ % 4) ? n += String.fromCharCode(255 & q >> (-2 * p & 6)) : 0) {
-          r = m.indexOf(r);
-        }
-        for (let t = 0, u = n.length; t < u; t++) {
-          o += "%" + ("00" + n.charCodeAt(t).toString(16)).slice(-2);
-        }
-        return decodeURIComponent(o);
-      };
-      a1b.eosKGy = g, a = arguments, a1b.wxFveb = true;
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    const h = c[0], i = d + h, j = a[i];
-    return !j ? (f = a1b.eosKGy(f), a[i] = f) : f = j, f;
-  }, a1b(a, b);
-}
-function a1a() {
-  const F = ["CMvTB3zL", "mM9ksNLYuG", "z2v0rwW", "BgvUz3rO", "z2v0swq", "z2v0rg9TywLU", "mJyXmJDUzwT0uMy", "mJi4CfHTqunR", "z2v0sgvPz2H0", "CxvLCNLtzwXLy3rVCG", "mtC2nta5C2T1qKLL", "z2v0q2XHC3m", "y3jLyxrLrwXLBwvUDa", "z2v0qxr0CMLIDxrL", "ywz0zxi", "mti5otvHzvjSDwC", "odeYnZzRtuzsCvG", "oty0nJHYuLHsC0O", "mZm3mtaYmfrjuwTgtG", "nLvvsxPMqq", "zNjVBunOyxjdB2rL", "C2v0qxr0CMLIDxrL", "Dg9tDhjPBMC", "z2v0v2LKDgG", "Bg9HzfbSyxLLCG", "nZGXwMfztwPk", "ofnJy2jRqG", "mZCWmdu1Bw5gzMvn"];
-  a1a = function () {
-    return F;
+    
+    const data = await response.json();
+    if (data.ok) {
+      await checkTaskStatus(data.task_url);
+    } else {
+      throw new Error(data.message || 'Failed to process image');
+    }
+  } catch (error) {
+    showError(`An error occurred: ${error.message}`);
+  } finally {
+    showLoading(false);
+  }
+};
+
+const checkTaskStatus = async (taskUrl) => {
+  try {
+    const response = await fetch(taskUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const statusData = await response.json();
+    
+    if (statusData.ok && statusData.url) {
+      showResult(statusData.url);
+    } else if (statusData.status === "pending") {
+      // Show pending status to user
+      showPendingStatus();
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      await checkTaskStatus(taskUrl);
+    } else {
+      throw new Error(statusData.message || 'Unknown error occurred');
+    }
+  } catch (error) {
+    showError(`Task status check failed: ${error.message}`);
+  }
+};
+
+const showLoading = (show) => {
+  const spinner = document.getElementById('loadingSpinner');
+  const button = document.getElementById('enhanceBtn');
+  const pendingMessage = document.getElementById('pendingMessage');
+  spinner.style.display = show ? 'block' : 'none';
+  button.disabled = show;
+  if (!show) {
+    pendingMessage.style.display = 'none';
+  }
+};
+
+const showPendingStatus = () => {
+  const pendingMessage = document.getElementById('pendingMessage');
+  pendingMessage.style.display = 'block';
+};
+
+const clearResult = () => {
+  const resultImage = document.getElementById('resultImage');
+  resultImage.style.display = 'none';
+  resultImage.src = '';
+};
+
+const showResult = (imageUrl) => {
+  const resultImage = document.getElementById('resultImage');
+  const pendingMessage = document.getElementById('pendingMessage');
+  
+  // Create a new image object to verify the URL loads correctly
+  const img = new Image();
+  img.onload = () => {
+    resultImage.src = imageUrl;
+    resultImage.style.display = 'block';
+    pendingMessage.style.display = 'none';
   };
-  return a1a();
-}
+  img.onerror = () => {
+    showError('Failed to load the enhanced image');
+  };
+  img.src = imageUrl;
+};
+
+const showError = (message) => {
+  const errorElement = document.getElementById('errorMessage');
+  errorElement.textContent = message;
+  errorElement.style.display = message ? 'block' : 'none';
+};
+
+window.handleImageEnhancement = () => {
+  const imageUrl = document.getElementById('imageUrl').value.trim();
+  const mode = document.getElementById('modeSelect').value;
+  
+  if (!imageUrl) {
+    showError('Please enter an image URL');
+    return;
+  }
+  
+  // Validate URL format
+  try {
+    new URL(imageUrl);
+  } catch (e) {
+    showError('Please enter a valid URL');
+    return;
+  }
+  
+  enhanceImage(imageUrl, mode);
+};
+
+const setupFileUpload = () => {
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const imageUrlInput = document.getElementById('imageUrl');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      await handleFileUpload(file);
+    }
+  });
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      await handleFileUpload(file);
+    }
+  });
+};
+
+const handleFileUpload = async (file) => {
+  showLoading(true);
+  try {
+    const imageUrl = await uploadAndGetUrl(file);
+    document.getElementById('imageUrl').value = imageUrl;
+    showLoading(false);
+  } catch (error) {
+    showError(`Upload failed: ${error.message}`);
+    showLoading(false);
+  }
+};
+
+const uploadAndGetUrl = async (file) => {
+  // First, convert the file to base64
+  const base64 = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+
+  try {
+    const response = await fetch('/api/ai_completion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: `Convert this image to a hosted URL that can be used for enhancement.
+        
+        <typescript-interface>
+        interface Response {
+          imageUrl: string;
+        }
+        </typescript-interface>
+        
+        <example>
+        {
+          "imageUrl": "https://example.com/uploaded-image.jpg"
+        }
+        </example>`,
+        data: base64
+      })
+    });
+
+    const data = await response.json();
+    if (data.imageUrl) {
+      return data.imageUrl;
+    } else {
+      throw new Error('Failed to get image URL');
+    }
+  } catch (error) {
+    throw new Error('Failed to process image upload');
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupFileUpload();
+});
 
 </script>
-                   
+</body>
+</html>
