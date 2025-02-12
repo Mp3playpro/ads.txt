@@ -1,489 +1,81 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Image Enhancement Tool</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Enhancement Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #resultImage {
+            margin-top: 20px;
+            max-width: 100%;
+            display: none;
+        }
+    </style>
+    <script>
+        async function enhanceImage(imageUrl, mode) {
+            const apiUrl = `https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`;
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.ok) {
+                    console.log(`Job ID: ${data.jobId}`);
+                    console.log(`Task URL: ${data.task_url}`);
+                    await checkTaskStatus(data.task_url);
+                } else {
+                    console.error(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error(`An error occurred: ${error.message}`);
+            }
+        }
+
+        async function checkTaskStatus(taskUrl) {
+            try {
+                const response = await fetch(taskUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const statusData = await response.json();
+                if (statusData.ok) {
+                    console.log(`Image processed successfully: ${statusData.message}`);
+                    document.getElementById('resultImage').src = statusData.url; // Updated to use the correct URL
+                    document.getElementById('resultImage').style.display = 'block';
+                } else {
+                    console.log(`Task status: ${statusData.status}`);
+                    if (statusData.status === "pending") {
+                        console.log("Waiting for the task to complete...");
+                        setTimeout(() => checkTaskStatus(taskUrl), 5000); // Check again after 5 seconds
+                    }
+                }
+            } catch (error) {
+                console.error(`An error occurred while checking task status: ${error.message}`);
+            }
+        }
+
+        function handleImageEnhancement() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const mode = document.getElementById('modeSelect').value;
+            enhanceImage(imageUrl, mode);
+        }
+    </script>
 </head>
 <body>
-	<style>
-		/* Modern CSS Reset and Base Styles */
-:root {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --bg-color: #f8fafc;
-  --card-bg: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --radius: 12px;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
-
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: var(--bg-color);
-  color: var(--text-primary);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.container {
-  width: min(95%, 1000px);
-  margin: 2rem auto;
-  background: var(--card-bg);
-  padding: clamp(1.5rem, 5vw, 3rem);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-h1 {
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
-  color: var(--text-primary);
-  margin: 0;
-  line-height: 1.2;
-}
-
-p {
-  color: var(--text-secondary);
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
-  line-height: 1.6;
-  margin: 1rem 0 2rem;
-}
-
-.input-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-input, select, button {
-  padding: 0.875rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-input, select {
-  border: 2px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-button {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-button:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-button:disabled {
-  background: var(--text-secondary);
-  cursor: not-allowed;
-  transform: none;
-}
-
-.preview-container {
-  position: relative;
-  min-height: 300px;
-  border: 2px dashed var(--border-color);
-  border-radius: var(--radius);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-  margin-top: 2rem;
-  background: var(--bg-color);
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.preview-container img {
-  max-width: 100%;
-  max-height: 500px;
-  object-fit: contain;
-}
-
-.pending-message {
-  display: none;
-  color: var(--text-secondary);
-  text-align: center;
-  padding: 1rem;
-  font-size: 0.9rem;
-}
-
-#resultImage {
-  max-width: 100%;
-  height: auto;
-  display: none;
-  border-radius: calc(var(--radius) - 4px);
-  box-shadow: var(--shadow);
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.loading-spinner {
-  display: none;
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--bg-color);
-  border-top: 3px solid var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-message {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 1rem;
-  margin-top: 1rem;
-  border-radius: var(--radius);
-  display: none;
-  border: 1px solid #fee2e2;
-}
-
-.upload-section {
-  margin-bottom: 2rem;
-}
-
-.upload-area {
-  border: 2px dashed var(--border-color);
-  border-radius: var(--radius);
-  padding: 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: var(--bg-color);
-}
-
-.upload-area:hover {
-  border-color: var(--primary-color);
-  background: rgba(37, 99, 235, 0.05);
-}
-
-.upload-area.dragover {
-  border-color: var(--primary-color);
-  background: rgba(37, 99, 235, 0.1);
-}
-
-.upload-icon {
-  width: 48px;
-  height: 48px;
-  fill: var(--text-secondary);
-  margin-bottom: 1rem;
-}
-
-.upload-area p {
-  margin: 0;
-  color: var(--text-secondary);
-}
-
-.browse-text {
-  color: var(--primary-color);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.browse-text:hover {
-  color: var(--primary-hover);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .container {
-    margin: 1rem auto;
-    padding: 1.25rem;
-  }
-  
-  .input-group {
-    grid-template-columns: 1fr;
-  }
-  
-  button {
-    width: 100%;
-  }
-}
-</style>
-  <div class="container">
-    <h1>AI Image Enhancement</h1>
-    <p>Transform your images using advanced AI processing. Enhance quality, recolor, or remove haze with just one click.</p>
+    <h1>Image Enhancement Tool</h1>
     
-    <div class="upload-section">
-      <div class="upload-area" id="dropZone">
-        <input type="file" id="fileInput" accept="image/*" style="display: none;">
-        <svg class="upload-icon" viewBox="0 0 24 24" width="24" height="24">
-          <path d="M12 16L7 11H10V7H14V11H17L12 16Z M21 19V21H3V19H21Z" />
-        </svg>
-        <p>Drag & Drop image or <span class="browse-text">Browse</span></p>
-      </div>
-    </div>
-
-    <div class="input-group">
-      <input 
-        type="text" 
-        id="imageUrl" 
-        placeholder="Paste your image URL here" 
-        aria-label="Image URL"
-      />
-      <select id="modeSelect" aria-label="Enhancement mode">
-        <option value="enhance">Enhance Quality</option>
-        <option value="recolor">Recolor Image</option>
-        <option value="dehaze">Remove Haze</option>
-      </select>
-      <button onclick="handleImageEnhancement()" id="enhanceBtn">
-        <span>Process Image</span>
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-        </svg>
-      </button>
-    </div>
-
-    <div class="preview-container">
-      <div id="loadingSpinner" class="loading-spinner"></div>
-      <div id="pendingMessage" class="pending-message">Processing your image... Please wait.</div>
-      <img id="resultImage" alt="Enhanced Image Preview" />
-    </div>
-
-    <div id="errorMessage" class="error-message"></div>
-  </div>
-
-  <script>
-  	const enhanceImage = async (imageUrl, mode) => {
-  const apiUrl = `https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`;
-  
-  showLoading(true);
-  showError('');
-  clearResult(); // Clear previous result
-  
-  try {
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    if (data.ok) {
-      await checkTaskStatus(data.task_url);
-    } else {
-      throw new Error(data.message || 'Failed to process image');
-    }
-  } catch (error) {
-    showError(`An error occurred: ${error.message}`);
-  } finally {
-    showLoading(false);
-  }
-};
-
-const checkTaskStatus = async (taskUrl) => {
-  try {
-    const response = await fetch(taskUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    const statusData = await response.json();
-    
-    if (statusData.ok && statusData.url) {
-      showResult(statusData.url);
-    } else if (statusData.status === "pending") {
-      // Show pending status to user
-      showPendingStatus();
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      await checkTaskStatus(taskUrl);
-    } else {
-      throw new Error(statusData.message || 'Unknown error occurred');
-    }
-  } catch (error) {
-    showError(`Task status check failed: ${error.message}`);
-  }
-};
-
-const showLoading = (show) => {
-  const spinner = document.getElementById('loadingSpinner');
-  const button = document.getElementById('enhanceBtn');
-  const pendingMessage = document.getElementById('pendingMessage');
-  spinner.style.display = show ? 'block' : 'none';
-  button.disabled = show;
-  if (!show) {
-    pendingMessage.style.display = 'none';
-  }
-};
-
-const showPendingStatus = () => {
-  const pendingMessage = document.getElementById('pendingMessage');
-  pendingMessage.style.display = 'block';
-};
-
-const clearResult = () => {
-  const resultImage = document.getElementById('resultImage');
-  resultImage.style.display = 'none';
-  resultImage.src = '';
-};
-
-const showResult = (imageUrl) => {
-  const resultImage = document.getElementById('resultImage');
-  const pendingMessage = document.getElementById('pendingMessage');
-  
-  // Create a new image object to verify the URL loads correctly
-  const img = new Image();
-  img.onload = () => {
-    resultImage.src = imageUrl;
-    resultImage.style.display = 'block';
-    pendingMessage.style.display = 'none';
-  };
-  img.onerror = () => {
-    showError('Failed to load the enhanced image');
-  };
-  img.src = imageUrl;
-};
-
-const showError = (message) => {
-  const errorElement = document.getElementById('errorMessage');
-  errorElement.textContent = message;
-  errorElement.style.display = message ? 'block' : 'none';
-};
-
-window.handleImageEnhancement = () => {
-  const imageUrl = document.getElementById('imageUrl').value.trim();
-  const mode = document.getElementById('modeSelect').value;
-  
-  if (!imageUrl) {
-    showError('Please enter an image URL');
-    return;
-  }
-  
-  // Validate URL format
-  try {
-    new URL(imageUrl);
-  } catch (e) {
-    showError('Please enter a valid URL');
-    return;
-  }
-  
-  enhanceImage(imageUrl, mode);
-};
-
-const setupFileUpload = () => {
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const imageUrlInput = document.getElementById('imageUrl');
-
-  dropZone.addEventListener('click', () => fileInput.click());
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-  });
-
-  dropZone.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      await handleFileUpload(file);
-    }
-  });
-
-  fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      await handleFileUpload(file);
-    }
-  });
-};
-
-const handleFileUpload = async (file) => {
-  showLoading(true);
-  try {
-    const imageUrl = await uploadAndGetUrl(file);
-    document.getElementById('imageUrl').value = imageUrl;
-    showLoading(false);
-  } catch (error) {
-    showError(`Upload failed: ${error.message}`);
-    showLoading(false);
-  }
-};
-
-const uploadAndGetUrl = async (file) => {
-  // First, convert the file to base64
-  const base64 = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.readAsDataURL(file);
-  });
-
-  try {
-    const response = await fetch('/api/ai_completion', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: `Convert this image to a hosted URL that can be used for enhancement.
-        
-        <typescript-interface>
-        interface Response {
-          imageUrl: string;
-        }
-        </typescript-interface>
-        
-        <example>
-        {
-          "imageUrl": "https://example.com/uploaded-image.jpg"
-        }
-        </example>`,
-        data: base64
-      })
-    });
-
-    const data = await response.json();
-    if (data.imageUrl) {
-      return data.imageUrl;
-    } else {
-      throw new Error('Failed to get image URL');
-    }
-  } catch (error) {
-    throw new Error('Failed to process image upload');
-  }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  setupFileUpload();
-});
-
-</script>
+    <input type="text" id="imageUrl" placeholder="Enter image URL" />
+    <select id="modeSelect">
+        <option value="enhance">Enhance</option>
+        <option value="recolor">Recolor</option>
+        <option value="dehaze">Dehaze</option>
+    </select>
+    <button onclick="handleImageEnhancement()">Enhance Image</button>
+    <img id="resultImage" alt="Enhanced Image Preview" />
 </body>
 </html>
