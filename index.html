@@ -3,79 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Enhancement Tool</title>
+    <title>Image Enhancer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            text-align: center;
             margin: 20px;
         }
-        #resultImage {
+        input, select, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #output {
             margin-top: 20px;
+        }
+        img {
             max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border: 2px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .download-btn {
             display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .download-btn:hover {
+            background-color: #218838;
         }
     </style>
-    <script>
-        async function enhanceImage(imageUrl, mode) {
-            const apiUrl = `https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`;
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.ok) {
-                    console.log(`Job ID: ${data.jobId}`);
-                    console.log(`Task URL: ${data.task_url}`);
-                    await checkTaskStatus(data.task_url);
-                } else {
-                    console.error(`Error: ${data.message}`);
-                }
-            } catch (error) {
-                console.error(`An error occurred: ${error.message}`);
-            }
-        }
-
-        async function checkTaskStatus(taskUrl) {
-            try {
-                const response = await fetch(taskUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const statusData = await response.json();
-                if (statusData.ok) {
-                    console.log(`Image processed successfully: ${statusData.message}`);
-                    document.getElementById('resultImage').src = statusData.url; // Updated to use the correct URL
-                    document.getElementById('resultImage').style.display = 'block';
-                } else {
-                    console.log(`Task status: ${statusData.status}`);
-                    if (statusData.status === "pending") {
-                        console.log("Waiting for the task to complete...");
-                        setTimeout(() => checkTaskStatus(taskUrl), 5000); // Check again after 5 seconds
-                    }
-                }
-            } catch (error) {
-                console.error(`An error occurred while checking task status: ${error.message}`);
-            }
-        }
-
-        function handleImageEnhancement() {
-            const imageUrl = document.getElementById('imageUrl').value;
-            const mode = document.getElementById('modeSelect').value;
-            enhanceImage(imageUrl, mode);
-        }
-    </script>
 </head>
 <body>
-    <h1>Image Enhancement Tool</h1>
+
+    <h2>Image Enhancer</h2>
+
+    <label for="imageUrl">Enter Image URL:</label>
+    <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg">
     
-    <input type="text" id="imageUrl" placeholder="Enter image URL" />
-    <select id="modeSelect">
-        <option value="enhance">Enhance</option>
-        <option value="recolor">Recolor</option>
+    <label for="mode">Select Mode:</label>
+    <select id="mode">
         <option value="dehaze">Dehaze</option>
+        <option value="recolor">Recolor</option>
+        <option value="enhance">Enhance</option>
     </select>
-    <button onclick="handleImageEnhancement()">Enhance Image</button>
-    <img id="resultImage" alt="Enhanced Image Preview" />
+
+    <button onclick="submitJob()">Enhance Image</button>
+
+    <div id="output"></div>
+
+    <button id="downloadBtn" class="download-btn" onclick="downloadImage()">Download Image</button>
+
+    <script>
+        let enhancedImageUrl = "";
+
+        function submitJob() {
+            const imageUrl = document.getElementById("imageUrl").value;
+            const mode = document.getElementById("mode").value;
+            const outputDiv = document.getElementById("output");
+            const downloadBtn = document.getElementById("downloadBtn");
+
+            if (!imageUrl) {
+                alert("Please enter an image URL.");
+                return;
+            }
+
+            outputDiv.innerHTML = "Processing...";
+            downloadBtn.style.display = "none";
+
+            // Step 1: Submit Job
+            fetch(`https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Job Submitted:", data); // Debugging log
+                    if (data.ok) {
+                        pollJobStatus(data.jobId);
+                    } else {
+                        outputDiv.innerHTML = "Error submitting job.";
+                    }
+                })
+                .catch(error => {
+                    outputDiv.innerHTML = "Failed to submit job.";
+                    console.error("Submission Error:", error);
+                });
+        }
+
+        function pollJobStatus(jobId) {
+            const outputDiv = document.getElementById("output");
+
+            const checkStatus = setInterval(() => {
+                fetch(`https://api.paxsenix.biz.id/task/${jobId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("API Response:", data); // Debugging log
+
+                        if (data.ok && data.status === "done") {
+                            clearInterval(checkStatus);
+                            enhancedImageUrl = data.url;
+
+                            console.log("Enhanced Image URL:", enhancedImageUrl); // Debugging log
+
+                            if (enhancedImageUrl) {
+                                setTimeout(() => { // Adding slight delay to avoid broken images
+                                    outputDiv.innerHTML = `<p>Image Processed Successfully!</p>
+                                                           <img src="${enhancedImageUrl}" alt="Enhanced Image">`;
+                                    document.getElementById("downloadBtn").style.display = "block";
+                                }, 2000); // 2-second delay to ensure image is available
+                            } else {
+                                outputDiv.innerHTML = "Error: No image returned.";
+                            }
+                        } else if (!data.ok) {
+                            clearInterval(checkStatus);
+                            outputDiv.innerHTML = "Error processing image.";
+                        }
+                    })
+                    .catch(error => {
+                        clearInterval(checkStatus);
+                        outputDiv.innerHTML = "Failed to check job status.";
+                        console.error("Fetch Error:", error);
+                    });
+            }, 3000); // Check status every 3 seconds
+        }
+
+        function downloadImage() {
+            if (enhancedImageUrl) {
+                const link = document.createElement("a");
+                link.href = enhancedImageUrl;
+                link.download = "enhanced_image.png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("No image available for download.");
+            }
+        }
+    </script>
+
 </body>
 </html>
