@@ -78,11 +78,10 @@
             outputDiv.innerHTML = "Processing...";
             downloadBtn.style.display = "none";
 
-            // Step 1: Submit Job
             fetch(`https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Job Submitted:", data); // Debugging log
+                    console.log("Job Submitted:", data);
                     if (data.ok) {
                         pollJobStatus(data.jobId);
                     } else {
@@ -102,20 +101,16 @@
                 fetch(`https://api.paxsenix.biz.id/task/${jobId}`)
                     .then(response => response.json())
                     .then(data => {
-                        console.log("API Response:", data); // Debugging log
+                        console.log("API Response:", data);
 
                         if (data.ok && data.status === "done") {
                             clearInterval(checkStatus);
                             enhancedImageUrl = data.url;
 
-                            console.log("Enhanced Image URL:", enhancedImageUrl); // Debugging log
+                            console.log("Enhanced Image URL:", enhancedImageUrl);
 
                             if (enhancedImageUrl) {
-                                setTimeout(() => { // Adding slight delay to avoid broken images
-                                    outputDiv.innerHTML = `<p>Image Processed Successfully!</p>
-                                                           <img src="${enhancedImageUrl}" alt="Enhanced Image">`;
-                                    document.getElementById("downloadBtn").style.display = "block";
-                                }, 2000); // 2-second delay to ensure image is available
+                                displayImage(enhancedImageUrl);
                             } else {
                                 outputDiv.innerHTML = "Error: No image returned.";
                             }
@@ -129,7 +124,27 @@
                         outputDiv.innerHTML = "Failed to check job status.";
                         console.error("Fetch Error:", error);
                     });
-            }, 3000); // Check status every 3 seconds
+            }, 3000);
+        }
+
+        function displayImage(url) {
+            const outputDiv = document.getElementById("output");
+            const downloadBtn = document.getElementById("downloadBtn");
+            const timestamp = new Date().getTime(); // Prevent caching issues
+
+            // Fix: Load image properly in all browsers
+            const img = new Image();
+            img.src = `${url}?t=${timestamp}`; // Append timestamp to force fresh load
+            img.alt = "Enhanced Image";
+            img.onload = function () {
+                outputDiv.innerHTML = "<p>Image Processed Successfully!</p>";
+                outputDiv.appendChild(img);
+                downloadBtn.style.display = "block";
+            };
+            img.onerror = function () {
+                outputDiv.innerHTML = "<p>Image could not be loaded. Try downloading it instead.</p>";
+                downloadBtn.style.display = "block";
+            };
         }
 
         function downloadImage() {
