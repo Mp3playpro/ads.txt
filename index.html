@@ -1,165 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Enhancer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        input, select, button {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-        }
-        #output {
-            margin-top: 20px;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 10px;
-            border: 2px solid #ddd;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .download-btn {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .download-btn:hover {
-            background-color: #218838;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Colorful Image Enhancer</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg, #2b5876, #4e4376);
+    color: white;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h2 {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(45deg, #ff9966, #ff5e62);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+
+  .input-container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-width: 500px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  input, button {
+    margin: 10px;
+    padding: 12px 15px;
+    font-size: 16px;
+    border-radius: 10px;
+    width: 100%;
+  }
+
+  input {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
+    color: white;
+    text-align: center;
+  }
+
+  button {
+    background: linear-gradient(45deg, #ff9966, #ff5e62);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  button:hover {
+    transform: scale(1.05);
+  }
+
+  .loading {
+    display: none;
+    font-size: 18px;
+    color: #ff9966;
+    margin-top: 20px;
+  }
+
+  .slider-container {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    margin-top: 30px;
+    display: none;
+  }
+
+  .before-after {
+    position: relative;
+    width: 100%;
+    padding-bottom: 60%;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  }
+
+  .before, .after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .before {
+    width: 50%;
+    z-index: 2;
+  }
+
+  .before img, .after img {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    transform: translateY(-50%);
+    border-radius: 10px;
+  }
+
+  .slider-handle {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 5px;
+    height: 100%;
+    background: white;
+    cursor: ew-resize;
+    border-radius: 2px;
+  }
+
+  .download-btn {
+    margin-top: 20px;
+    padding: 12px 20px;
+    background: #34C759;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    display: none;
+    transition: 0.2s;
+  }
+
+  .download-btn:hover {
+    transform: scale(1.05);
+  }
+</style>
 <body>
 
-    <h2>Image Enhancer</h2>
+  <h2>AI Colorful Image Enhancer</h2>
 
-    <label for="imageUrl">Enter Image URL:</label>
-    <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg">
-    
-    <label for="mode">Select Mode:</label>
-    <select id="mode">
-        <option value="dehaze">Dehaze</option>
-        <option value="recolor">Recolor</option>
-        <option value="enhance">Enhance</option>
-    </select>
+  <div class="input-container">
+    <input type="text" id="imageUrl" placeholder="Paste image URL">
+    <input type="file" id="uploadImage" accept="image/*">
+    <button onclick="uploadAndProcess()">Upload & Colorize</button>
+    <button onclick="colorizeImage()">Colorize from URL</button>
+  </div>
 
-    <button onclick="submitJob()">Enhance Image</button>
+  <div id="loading" class="loading">Processing...</div>
 
-    <div id="output"></div>
+  <div id="output" class="slider-container">
+    <div class="before-after">
+      <div id="beforeContainer" class="before">
+        <img id="beforeImage" src="" alt="Original">
+      </div>
+      <div class="after">
+        <img id="afterImage" src="" alt="Colorized">
+      </div>
+      <div id="slider" class="slider-handle"></div>
+    </div>
+  </div>
 
-    <button id="downloadBtn" class="download-btn" onclick="downloadImage()">Download Image</button>
+  <button id="downloadBtn" class="download-btn" onclick="downloadColorizedImage()">Download Image</button>
 
-    <script>
-        let enhancedImageUrl = "";
+  <script>
+    let colorizedImageUrl = "";
 
-        function submitJob() {
-            const imageUrl = document.getElementById("imageUrl").value;
-            const mode = document.getElementById("mode").value;
-            const outputDiv = document.getElementById("output");
-            const downloadBtn = document.getElementById("downloadBtn");
+    function colorizeImage() {
+      const imageUrl = document.getElementById("imageUrl").value;
+      if (!imageUrl) {
+        alert("Please enter an image URL.");
+        return;
+      }
+      processImage(imageUrl);
+    }
 
-            if (!imageUrl) {
-                alert("Please enter an image URL.");
-                return;
-            }
+    function uploadAndProcess() {
+      const fileInput = document.getElementById("uploadImage");
+      if (!fileInput.files.length) {
+        alert("Please select an image to upload.");
+        return;
+      }
 
-            outputDiv.innerHTML = "Processing...";
-            downloadBtn.style.display = "none";
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
 
-            fetch(`https://api.paxsenix.biz.id/tools/vyro?url=${encodeURIComponent(imageUrl)}&mode=${mode}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Job Submitted:", data);
-                    if (data.ok) {
-                        pollJobStatus(data.jobId);
-                    } else {
-                        outputDiv.innerHTML = "Error submitting job.";
-                    }
-                })
-                .catch(error => {
-                    outputDiv.innerHTML = "Failed to submit job.";
-                    console.error("Submission Error:", error);
-                });
+      document.getElementById("loading").style.display = "block";
+
+      fetch("https://api.paxsenix.biz.id/upload", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok && data.url) {
+          processImage(data.url);
+        } else {
+          alert("Upload failed.");
+          document.getElementById("loading").style.display = "none";
         }
+      })
+      .catch(error => {
+        console.error("Upload Error:", error);
+        alert("Upload error.");
+        document.getElementById("loading").style.display = "none";
+      });
+    }
 
-        function pollJobStatus(jobId) {
-            const outputDiv = document.getElementById("output");
+    function processImage(imageUrl) {
+      document.getElementById("beforeImage").src = imageUrl;
+      document.getElementById("output").style.display = "none";
+      document.getElementById("loading").style.display = "block";
 
-            const checkStatus = setInterval(() => {
-                fetch(`https://api.paxsenix.biz.id/task/${jobId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("API Response:", data);
-
-                        if (data.ok && data.status === "done") {
-                            clearInterval(checkStatus);
-                            enhancedImageUrl = data.url;
-
-                            console.log("Enhanced Image URL:", enhancedImageUrl);
-
-                            if (enhancedImageUrl) {
-                                displayImage(enhancedImageUrl);
-                            } else {
-                                outputDiv.innerHTML = "Error: No image returned.";
-                            }
-                        } else if (!data.ok) {
-                            clearInterval(checkStatus);
-                            outputDiv.innerHTML = "Error processing image.";
-                        }
-                    })
-                    .catch(error => {
-                        clearInterval(checkStatus);
-                        outputDiv.innerHTML = "Failed to check job status.";
-                        console.error("Fetch Error:", error);
-                    });
-            }, 3000);
+      fetch(`https://api.paxsenix.biz.id/tools/colorization?url=${encodeURIComponent(imageUrl)}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          pollJobStatus(data.jobId);
+        } else {
+          alert("Error processing image.");
+          document.getElementById("loading").style.display = "none";
         }
+      })
+      .catch(error => {
+        console.error("API Error:", error);
+        alert("Failed to process image.");
+        document.getElementById("loading").style.display = "none";
+      });
+    }
 
-        function displayImage(url) {
-            const outputDiv = document.getElementById("output");
-            const downloadBtn = document.getElementById("downloadBtn");
-            const timestamp = new Date().getTime(); // Prevent caching issues
+    function pollJobStatus(jobId) {
+      const checkStatus = setInterval(() => {
+        fetch(`https://api.paxsenix.biz.id/task/${jobId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.ok && data.status === "done") {
+            clearInterval(checkStatus);
+            colorizedImageUrl = data.url;
+            document.getElementById("afterImage").src = colorizedImageUrl;
+            document.getElementById("output").style.display = "block";
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("downloadBtn").style.display = "block";
+          }
+        })
+        .catch(error => console.error("Polling Error:", error));
+      }, 3000);
+    }
 
-            // Fix: Load image properly in all browsers
-            const img = new Image();
-            img.src = `${url}?t=${timestamp}`; // Append timestamp to force fresh load
-            img.alt = "Enhanced Image";
-            img.onload = function () {
-                outputDiv.innerHTML = "<p>Image Processed Successfully!</p>";
-                outputDiv.appendChild(img);
-                downloadBtn.style.display = "block";
-            };
-            img.onerror = function () {
-                outputDiv.innerHTML = "<p>Image could not be loaded. Try downloading it instead.</p>";
-                downloadBtn.style.display = "block";
-            };
-        }
-
-        function downloadImage() {
-            if (enhancedImageUrl) {
-                const link = document.createElement("a");
-                link.href = enhancedImageUrl;
-                link.download = "enhanced_image.png";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } else {
-                alert("No image available for download.");
-            }
-        }
-    </script>
-
+    function downloadColorizedImage() {
+      if (colorizedImageUrl) {
+        window.open(colorizedImageUrl, "_blank");
+      } else {
+        alert("No colorized image available.");
+      }
+    }
+  </script>
 </body>
 </html>
